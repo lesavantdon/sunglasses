@@ -18,9 +18,7 @@ const users = require(path.join(__dirname, '../initial-data/users.json'));
 const products = require(path.join(__dirname, '../initial-data/products.json'));
 const brands = require(path.join(__dirname, '../initial-data/brands.json'));
 let carts = {}; // In-memory storage for carts (userId -> cart)
-
-// JWT secret key
-const JWT_SECRET = crypto.randomBytes(32).toString('hex');
+let JWT_SECRET = crypto.randomBytes(32).toString('hex'); // Initially generate JWT secret key
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -31,6 +29,12 @@ app.use((err, req, res, next) => {
 // Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+// Generate new JWT secret
+const generateJWTSecret = () => {
+  JWT_SECRET = crypto.randomBytes(32).toString('hex');
+  return JWT_SECRET;
+};
+
 // Login endpoint
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
@@ -40,6 +44,8 @@ app.post('/login', (req, res) => {
   if (!user) {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
+
+  generateJWTSecret(); // Generate new JWT secret upon login
 
   const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
   res.json({ accessToken });
@@ -96,7 +102,7 @@ app.get('/products/:brand', (req, res) => {
   if (!brand) {
     return res.status(404).json({ message: 'Brand not found' });
   }
-console.log(brand);
+  console.log(brand);
 
   const filteredProducts = products.filter(p => p.categoryId === brand.id);
   res.json(filteredProducts);
@@ -109,51 +115,10 @@ app.get('/search', (req, res) => {
   res.json(filteredProducts);
 });
 
-// Get all brands
-app.get('/brands', (req, res) => {
-  res.json(brands);
-});
-
-// Delete product from cart
-app.delete('/cart', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { productId } = req.query;
-
-  if (!carts[userId]) {
-    return res.status(404).json({ message: 'Cart not found' });
-  }
-
-  const cartIndex = carts[userId].findIndex(item => item.productId === productId);
-  if (cartIndex === -1) {
-    return res.status(404).json({ message: 'Product not found in cart' });
-  }
-
-  carts[userId].splice(cartIndex, 1);
-  res.json({ message: 'Product removed from cart' });
-});
-
-// Change quantity of product in cart
-app.patch('/cart', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { productId, quantity } = req.body;
-
-  if (!carts[userId]) {
-    return res.status(404).json({ message: 'Cart not found' });
-  }
-
-  const item = carts[userId].find(item => item.productId === productId);
-  if (!item) {
-    return res.status(404).json({ message: 'Product not found in cart' });
-  }
-
-  item.quantity = quantity;
-  res.json({ message: 'Quantity updated' });
-});
-
 // Starting the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app;
+module.exports = { app, server }; 
