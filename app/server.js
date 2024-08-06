@@ -2,9 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const swaggerDocument = YAML.load('./swagger.yaml');
-const path = require('path');
+const swaggerDocument = YAML.load('../swagger.yaml');
 const cors = require('cors');
+const authenticateToken = require('./middleware/auth');
 
 const app = express();
 
@@ -16,10 +16,10 @@ app.use(cors());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
-app.use('/brands', require('../routes/brands'));
-app.use('/products', require('./products'));
-app.use('/users', require('../routes/users'));
-app.use('/cart', require('../routes/cart'));
+app.use('/brands', require('./routes/brands'));
+app.use('/products', require('./routes/products'));
+app.use('/users', require('./routes/users'));
+app.use('/cart', authenticateToken, require('./routes/cart'));
 
 // Error handling
 app.use((err, req, res, next) => {

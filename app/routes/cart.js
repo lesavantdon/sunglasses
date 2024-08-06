@@ -2,7 +2,7 @@ const express = require('express');
 const { body, query, validationResult } = require('express-validator');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const products = require('@/initial-data/products.json');
+const products = require('../initial-data/products.json');
 let carts = {}; // In-memory storage for carts (userId -> cart)
 
 // Middleware to check JWT

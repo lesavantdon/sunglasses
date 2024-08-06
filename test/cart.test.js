@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../initial-data/server');
+const app = require('../app/initial-data/server');
 
 let token;
 

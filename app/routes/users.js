@@ -1,39 +1,36 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const users = require('@/initial-data/users.json');
 
-const JWT_SECRET = crypto.randomBytes(32).toString('hex');
+// Register a new user
+router.post('/register', async (req, res) => {
+  const { username, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-// Middleware to check for validation errors
-function handleValidationErrors(req, res, next) {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  next();
-}
+  const newUser = {
+    id: users.length + 1,
+    username,
+    password: hashedPassword
+  };
 
-// Login endpoint
-router.post(
-  '/login',
-  [
-    body('email').isEmail().withMessage('Email must be valid'),
-    body('password').isLength({ min: 5 }).withMessage('Password must be at least 5 characters long'),
-    handleValidationErrors
-  ],
-  (req, res) => {
-    const { email, password } = req.body;
-    const user = users.find(u => u.email === email && u.login.password === password);
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+  users.push(newUser);
 
-    const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+  res.status(201).json({ message: 'User registered successfully' });
+});
+
+// Login a user
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(u => u.username === username);
+
+  if (user && await bcrypt.compare(password, user.password)) {
+    const accessToken = jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
     res.json({ accessToken });
+  } else {
+    res.status(403).json({ message: 'Invalid username or password' });
   }
-);
+});
 
 module.exports = router;
