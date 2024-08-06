@@ -1,7 +1,10 @@
 const express = require('express');
+const path = require('path');
 const router = express.Router();
-const brands = require('@/initial-data/brands.json');
-const products = require('@/initial-data/products.json');
+
+// Load data files using relative paths
+const brands = require(path.join(__dirname, '../initial-data/brands.json'));
+const products = require(path.join(__dirname, '../initial-data/products.json'));
 
 // Get all brands
 router.get('/', (req, res) => {

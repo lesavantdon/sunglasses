@@ -16,10 +16,10 @@ app.use(cors());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
-app.use('/brands', require('./routes/brands'));
+app.use('/brands', require('../routes/brands'));
 app.use('/products', require('./products'));
-app.use('/users', require('./routes/users'));
-app.use('/cart', require('./routes/cart'));
+app.use('/users', require('../routes/users'));
+app.use('/cart', require('../routes/cart'));
 
 // Error handling
 app.use((err, req, res, next) => {
