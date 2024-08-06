@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node app/server.js",
-    "test": "mocha ./test/*.js"
+    "test": "mocha ./test/*.js jest"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-validator": "^7.1.0",
     "finalhandler": "latest",
     "fs": "^0.0.1-security",
     "http": "latest",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "chai": "^4.4.1",
     "chai-http": "^4.4.0",
+    "jest": "^27.5.1",
     "mocha": "^10.2.0"
   }
 }

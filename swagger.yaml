@@ -1,40 +1,18 @@
 openapi: 3.0.0
 info:
-  version: 1.0.0
   title: Sunglasses Store API
-  description: API documentation for the Sunglasses Store application
+  version: 1.0.0
+  description: API for managing a sunglasses store
+
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:3001
+    description: Local server
+
 paths:
-  /search:
-    get:
-      summary: Search for glasses
-      parameters:
-        - in: query
-          name: query
-          required: true
-          schema:
-            type: string
-          description: Search query
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-                    categoryId:
-                      type: string
-  /login:
+  /users/login:
     post:
       summary: User login
+      description: Authenticates a user and returns a JWT token
       requestBody:
         required: true
         content:
@@ -44,8 +22,12 @@ paths:
               properties:
                 email:
                   type: string
+                  example: user@example.com
+                  description: The user's email
                 password:
                   type: string
+                  example: password
+                  description: The user's password (at least 5 characters)
       responses:
         "200":
           description: Successful login
@@ -56,22 +38,47 @@ paths:
                 properties:
                   accessToken:
                     type: string
+                    example: jwt-token
         "401":
           description: Invalid credentials
+        "400":
+          description: Validation errors
 
-  /products/{brand}:
+  /brands:
+    get:
+      summary: Get all brands
+      description: Returns a list of all available brands
+      responses:
+        "200":
+          description: A list of brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    name:
+                      type: string
+                      example: Oakley
+
+  /brands/{brand}:
     get:
       summary: Get products by brand
+      description: Returns a list of products for a specific brand
       parameters:
         - in: path
           name: brand
           required: true
           schema:
             type: string
-          description: Brand name
+          description: The name of the brand
       responses:
         "200":
-          description: Successful operation
+          description: A list of products for the specified brand
           content:
             application/json:
               schema:
@@ -80,20 +87,31 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: string
+                      type: integer
+                      example: 1
                     name:
                       type: string
+                      example: Oakley Sunglasses
                     categoryId:
-                      type: string
+                      type: integer
+                      example: 1
         "404":
           description: Brand not found
 
-  /brands:
+  /products/search:
     get:
-      summary: Get all brands
+      summary: Search for products
+      description: Searches for products by name
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+          description: The search query
       responses:
         "200":
-          description: Successful operation
+          description: A list of products matching the search query
           content:
             application/json:
               schema:
@@ -102,140 +120,24 @@ paths:
                   type: object
                   properties:
                     id:
-                      type: string
+                      type: integer
+                      example: 1
                     name:
                       type: string
+                      example: Oakley Sunglasses
+                    categoryId:
+                      type: integer
+                      example: 1
 
   /cart:
-    delete:
-      summary: Remove a product from the cart
-      description: Delete a product from the user's cart.
-      parameters:
-        - in: header
-          name: Authorization
-          required: true
-          schema:
-            type: string
-          description: JWT token
-        - in: query
-          name: productId
-          required: true
-          schema:
-            type: string
-          description: ID of the product to delete
-      responses:
-        "200":
-          description: Product deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Product removed from cart
-        "400":
-          description: Invalid product ID
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Invalid product ID
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Unauthorized access
-        "404":
-          description: Product not found in cart
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Product not found in cart
-    patch:
-      summary: Change the quantity of a product in the cart
-      description: Update the quantity of a product in the user's cart.
-      parameters:
-        - in: header
-          name: Authorization
-          required: true
-          schema:
-            type: string
-          description: JWT token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                productId:
-                  type: string
-                  description: ID of the product to update
-                quantity:
-                  type: integer
-                  description: New quantity of the product
-                  example: 2
-      responses:
-        "200":
-          description: Quantity updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Quantity updated
-        "400":
-          description: Invalid product ID or quantity
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Invalid product ID or quantity
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Unauthorized access
-        "404":
-          description: Product not found in cart
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Product not found in cart
     get:
       summary: Get user's cart
+      description: Returns the current cart for the authenticated user
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Successful operation
+          description: A list of items in the user's cart
           content:
             application/json:
               schema:
@@ -247,52 +149,16 @@ paths:
                       type: object
                       properties:
                         productId:
-                          type: string
+                          type: integer
+                          example: 1
                         quantity:
                           type: integer
+                          example: 2
         "401":
           description: Unauthorized
 
     post:
       summary: Add product to cart
+      description: Adds a product to the authenticated user's cart
       security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                productId:
-                  type: string
-                quantity:
-                  type: integer
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        productId:
-                          type: string
-                        quantity:
-                          type: integer
-        "401":
-          description: Unauthorized
-        "404":
-          description: Product not found
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+        -

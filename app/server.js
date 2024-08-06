@@ -1,26 +1,25 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
 const swaggerDocument = YAML.load('./swagger.yaml');
-const app = express();
 const path = require('path');
-const crypto = require('crypto');
 const cors = require('cors');
+
+const app = express();
 
 // Middleware setup
 app.use(bodyParser.json());
 app.use(cors());
 
-// Load data
-const users = require(path.join(__dirname, '../initial-data/users.json'));
-const products = require(path.join(__dirname, '../initial-data/products.json'));
-const brands = require(path.join(__dirname, '../initial-data/brands.json'));
-let carts = {}; // In-memory storage for carts (userId -> cart)
+// Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// JWT secret key
-const JWT_SECRET = crypto.randomBytes(32).toString('hex');
+// Routes
+app.use('/brands', require('./routes/brands'));
+app.use('/products', require('./products'));
+app.use('/users', require('./routes/users'));
+app.use('/cart', require('./routes/cart'));
 
 // Error handling
 app.use((err, req, res, next) => {
@@ -28,130 +27,8 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-// Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-// Login endpoint
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  console.log(req.body);
-  console.log(users);
-  const user = users.find(u => u.email === email && u.login.password === password);
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
-  res.json({ accessToken });
-});
-
-// Middleware to check JWT
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
-}
-
-// Get user's cart
-app.get('/cart', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const cart = carts[userId] || [];
-  res.json({ items: cart });
-});
-
-// Add product to cart
-app.post('/cart', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { productId, quantity } = req.body;
-
-  if (!products.find(p => p.id === productId)) {
-    return res.status(404).json({ message: 'Product not found' });
-  }
-
-  if (!carts[userId]) {
-    carts[userId] = [];
-  }
-
-  const existingItem = carts[userId].find(item => item.productId === productId);
-  if (existingItem) {
-    existingItem.quantity += quantity;
-  } else {
-    carts[userId].push({ productId, quantity });
-  }
-
-  res.json({ items: carts[userId] });
-});
-
-// Get products by brand
-app.get('/products/:brand', (req, res) => {
-  const brandName = req.params.brand.toLowerCase();
-  const brand = brands.find(b => b.name.toLowerCase() === brandName);
-
-  if (!brand) {
-    return res.status(404).json({ message: 'Brand not found' });
-  }
-console.log(brand);
-
-  const filteredProducts = products.filter(p => p.categoryId === brand.id);
-  res.json(filteredProducts);
-});
-
-// Search for glasses
-app.get('/search', (req, res) => {
-  const query = req.query.query;
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
-  res.json(filteredProducts);
-});
-
-// Get all brands
-app.get('/brands', (req, res) => {
-  res.json(brands);
-});
-
-// Delete product from cart
-app.delete('/cart', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { productId } = req.query;
-
-  if (!carts[userId]) {
-    return res.status(404).json({ message: 'Cart not found' });
-  }
-
-  const cartIndex = carts[userId].findIndex(item => item.productId === productId);
-  if (cartIndex === -1) {
-    return res.status(404).json({ message: 'Product not found in cart' });
-  }
-
-  carts[userId].splice(cartIndex, 1);
-  res.json({ message: 'Product removed from cart' });
-});
-
-// Change quantity of product in cart
-app.patch('/cart', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const { productId, quantity } = req.body;
-
-  if (!carts[userId]) {
-    return res.status(404).json({ message: 'Cart not found' });
-  }
-
-  const item = carts[userId].find(item => item.productId === productId);
-  if (!item) {
-    return res.status(404).json({ message: 'Product not found in cart' });
-  }
-
-  item.quantity = quantity;
-  res.json({ message: 'Quantity updated' });
-});
-
 // Starting the server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
