@@ -36,7 +36,7 @@ const generateJWTSecret = () => {
 };
 
 // Login endpoint
-app.post('/login', (req, res) => {
+app.post('/users', (req, res) => {
   const { email, password } = req.body;
   console.log(req.body);
   console.log(users);

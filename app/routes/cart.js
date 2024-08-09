@@ -34,22 +34,26 @@ router.get('/', authenticateToken, (req, res) => {
   res.json({ items: cart });
 });
 
-// Add product to cart
 router.post(
   '/',
   authenticateToken,
   [
-    body('productId').isInt({ min: 1 }).withMessage('Product ID must be a positive integer'),
+    body('productName').isString().withMessage('Product name must be a string'),
     body('quantity').isInt({ min: 1 }).withMessage('Quantity must be a positive integer'),
     handleValidationErrors
   ],
   (req, res) => {
     const userId = req.user.id;
-    const { productId, quantity } = req.body;
+    const { productName, quantity } = req.body;
 
-    if (!products.find(p => p.id === productId)) {
+    // Find the product by name
+    const product = products.find(p => p.name.toLowerCase() === productName.toLowerCase());
+
+    if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+
+    const productId = product.id;
 
     if (!carts[userId]) {
       carts[userId] = [];
@@ -65,6 +69,7 @@ router.post(
     res.json({ items: carts[userId] });
   }
 );
+
 
 // Delete product from cart
 router.delete(

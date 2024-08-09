@@ -11,9 +11,9 @@ router.get('/', (req, res) => {
   res.json(brands);
 });
 
-// Get products by brand
-router.get('/:brand', (req, res) => {
-  const brandName = req.params.brand.toLowerCase();
+// Get products by brand name
+router.get('/:brandName/products', (req, res) => {
+  const brandName = req.params.brandName.toLowerCase();
   const brand = brands.find(b => b.name.toLowerCase() === brandName);
 
   if (!brand) {
